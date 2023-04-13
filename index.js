@@ -4,7 +4,7 @@ let data = require("./database.json");
 const token = '5859957737:AAG7-GOtOc6qmZx4NPOiYu1PwxwMkSsc95U';
 
 const bot = new TelegramBot(token, {polling: true});
-
+let AdminsIdGlobal=data.adminsAbsolute
 let AdminsId=[1111111111,2222222222,650051224]
 let Moderators= data.days
 
@@ -66,7 +66,7 @@ const CheckDateAndTime= () => {
             }
         }
     }
-    console.log(WorkingModerators)
+    console.log(AdminsIdGlobal)
 
 }
 

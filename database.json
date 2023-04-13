@@ -1,1 +1,5 @@
-{"days":[[],[],[{"id":"698067665","name":"sesis","startHours":"12","endHours":"16","indexName":"698067665_sesis_2_12_15","workingDay":"2"},{"id":"426869819","name":"NIKITA","startHours":"12","endHours":"14","indexName":"426869819_NIKITA_2_12_14","workingDay":"2"}],[],[],[],[]]}
+{"days":[
+  [],[],[],[],[],[],[]
+],
+"adminsAbsolute": [1111111111,2222222222,650051224],
+"adminsLocal": [[1111111111,2222222222,650051224],[]]}
