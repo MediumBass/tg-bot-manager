@@ -74,7 +74,7 @@ const CheckDateAndTime= () => {
         let Moderators=ModeratorsAll[j]
         let channelName = Channels[j]
         for (let i = 0; i < Moderators[currentDay].length; i++) {
-            console.log(WorkingModerators)
+           // console.log(WorkingModerators)
             if (currentHour >= Moderators[currentDay][i].startHour && currentHour < Moderators[currentDay][i].endHour) {
                 // console.log("moder with id "+Moderators[currentDay][i].id+" is working now")
                 if (WorkingModerators.indexOf(Moderators[currentDay][i].indexName) === -1) {
