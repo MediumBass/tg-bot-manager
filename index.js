@@ -49,8 +49,8 @@ const CheckDateAndTime= () => {
     currentDay=now.getDay()
     currentHour=now.getHours()
     currentTime=now.getTime()
-    console.log("цикл начался")
-    console.log( PostQue[0])
+  //  console.log("цикл начался")
+    // console.log( PostQue[0])
     for(let j=0;j<ModeratorsAll.length;j++) { //колво каналов
         //цикл постинга
 
