@@ -2,7 +2,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 let data = require("./database.json");
 let postsData =require("./postsDatabase.json");
-const token = '5859957737:AAG7-GOtOc6qmZx4NPOiYu1PwxwMkSsc95U';
+const token = '';
 
 const bot = new TelegramBot(token, {polling: true});
 let AdminsIdGlobal=data.adminsAbsolute
