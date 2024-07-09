@@ -1,17 +1,21 @@
 const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
+const {CheckDateAndTime} = require('./utils/timer')
+const {CopyPost} = require("./utils/postsController")
+const {CreateNewChannel,DeleteChannel} = require("./utils/channelsController")
 let data = require("./database.json");
 let postsData =require("./postsDatabase.json");
-const token = '';
+
+const token = '5859957737:AAG7-GOtOc6qmZx4NPOiYu1PwxwMkSsc95U';
 
 const bot = new TelegramBot(token, {polling: true});
+
 let AdminsIdGlobal=data.adminsAbsolute
 let ModeratorsAll= data.days
 let Channels= data.channels
 let AdminsLocal= data.adminsLocal
 let AdminsManagers= data.adminsManagers
-let AwaitedPosts= postsData.awaitedPosts
-let DeleteRequests= postsData.deleteRequests
+
 let CommentsChannel= data.commentsChannel
 let CloseComments=[]
 
@@ -23,101 +27,23 @@ let ModerQue=[]
 let WorkingModerators=[]
 let PostQue=[]
 let RePostQue=[]
+let newLocalAdminId
+let newChannelId
 
-let timerId = setInterval(() => CheckDateAndTime(), 10000);
-let currentDay
-let currentHour
-let currentTime
-
-fs.readFile('database.json', 'utf8', function(err, data) {
-    if (err) {
-        console.error(err);
-    } else {
-        console.log("database.json connected");
-    }
-})
-fs.readFile('postsDatabase.json', 'utf8', function(err, data) {
-    if (err) {
-        console.error(err);
-    } else {
-        console.log("postsDatabase.json connected");
-    }
-})
-//проверяет каждую минуту состояние модераторов в этот день
-const CheckDateAndTime= () => {
-    let now = new Date();
-    currentDay=now.getDay()
-    currentHour=now.getHours()
-    currentTime=now.getTime()
-  //  console.log("цикл начался")
-    // console.log( PostQue[0])
-    for(let j=0;j<ModeratorsAll.length;j++) { //колво каналов
-        //цикл постинга
-
-        for(let i=0;i<AwaitedPosts[j].length;i++) {//7 дней
-            if (AwaitedPosts[j][i] !== undefined) {
-                if (AwaitedPosts[j][i].finalDate <= currentTime) {
-                    CopyPost(AwaitedPosts[j][i].moderId, AwaitedPosts[j][i].channelId, AwaitedPosts[j][i])
-                    DeleteFromAwaitedPosts(j, i)
-                }
-            }
-        }
-        //цикл автоудаления
-        if(DeleteRequests[j]){
-            for(let i=0;i<DeleteRequests[j].length;i++){
-                if(DeleteRequests[j][i].mustBeDeletedAt<=currentTime){
-                    DeleteFromAutoDelete(DeleteRequests[j][i],i)
-                }
-            }
-        }
-        //цикл раздачи админок
-        let Moderators=ModeratorsAll[j]
-        let channelName = Channels[j]
-        for (let i = 0; i < Moderators[currentDay].length; i++) {
-           // console.log(WorkingModerators)
-            if (currentHour >= Moderators[currentDay][i].startHour && currentHour < Moderators[currentDay][i].endHour) {
-                // console.log("moder with id "+Moderators[currentDay][i].id+" is working now")
-                if (WorkingModerators.indexOf(Moderators[currentDay][i].indexName) === -1) {
-                    WorkingModerators.push(Moderators[currentDay][i].indexName)
-                    bot.promoteChatMember(channelName, Moderators[currentDay][i].moderId, {
-                        can_change_info: false,
-                        can_post_messages: true,
-                        can_edit_messages: true,
-                        can_delete_messages: true,
-                        can_invite_users: false,
-                        can_restrict_members: false,
-                        can_pin_messages: false,
-                        can_promote_members: false,
-                    }).then(() => {
-                        console.log('User ' + Moderators[currentDay][i].indexName + ' promoted successfully')
-                    }).catch((error) => {
-                        console.error('Error promoting user:', error)
-                    });
-                }
-            } else {
-                //  console.log("moder with id "+Moderators[currentDay][i].id+" isnt working now")
-                if (WorkingModerators.indexOf(Moderators[currentDay][i].indexName) !== -1) {
-                    WorkingModerators.splice(WorkingModerators.indexOf(Moderators[currentDay][i].indexName), 1)
-                    bot.promoteChatMember(channelName, Moderators[currentDay][i].moderId, {
-                        can_change_info: false,
-                        can_post_messages: false,
-                        can_edit_messages: false,
-                        can_delete_messages: false,
-                        can_invite_users: false,
-                        can_restrict_members: false,
-                        can_pin_messages: false,
-                        can_promote_members: false,
-                    }).then(() => {
-                        console.log('User ' + Moderators[currentDay][i].indexName + ' demoted successfully')
-                    }).catch((error) => {
-                        console.error('Error promoting user:', error)
-                    });
-                }
-            }
-        }
-    }
-
+let postTimer={
+    DLTReq:postsData.deleteRequests,
+    AwaitReq:postsData.awaitedPosts,
 }
+const setNewData = (newData) =>{
+    data=newData
+}
+const setNewPostsData = (newData) =>{
+    postsData=newData
+}
+setInterval(() => CheckDateAndTime(bot,data,postsData,WorkingModerators,...Object.values(postTimer),PostQue,CloseComments,setNewData,setNewPostsData,Channels), 10000);
+console.log("database.json connected");
+//проверяет каждую минуту состояние модераторов в этот день
+
 const ChannelsString = () =>{
     channelsString=""
     channelsButtonList=[]
@@ -173,47 +99,7 @@ const CreateNewLocalAdmin = (chatId,userId) => {
     })
     newLocalAdminId=null
 }
-const CreateNewChannel = (chatId,channelName,commentsChannel) => {
-    let EditedModerators=data
-    let EditedPosts=postsData
-    EditedModerators.channels.push(channelName)
-    EditedModerators.adminsLocal.push(AdminsIdGlobal)
-    EditedModerators.adminsManagers.push([])
-    EditedModerators.days.push([[],[],[],[],[],[],[]])
-    EditedPosts.awaitedPosts.push([])
-    EditedPosts.deleteRequests.push([])
-    EditedModerators.commentsChannel.push(commentsChannel)
-    fs.writeFile('database.json', JSON.stringify(EditedModerators), err => {
-        if (err) {
-            console.error(err);
-        } else {
-            data=EditedModerators
-        }
-    })
-    fs.writeFile('postsDatabase.json', JSON.stringify(EditedPosts), err => {
-        if (err) {
-            console.error(err);
-        } else {
-            postsData=EditedPosts
-        }
-    })
-    bot.sendMessage(chatId, `Новый канал успешно добавлен на сервер`);
-    ChannelsString()
-}
-const CreateNewAwaitedPost = (chatId,channelId) => {
-    let EditedPosts=postsData
-    console.log(PostQue[chatId].yearPost,PostQue[chatId].monthPost,PostQue[chatId].dayPost,PostQue[chatId].hoursPost,PostQue[chatId].minutesPost)
-    let requestedDate=new Date(PostQue[chatId].yearPost,PostQue[chatId].monthPost,PostQue[chatId].dayPost,PostQue[chatId].hoursPost,PostQue[chatId].minutesPost,0)
-    PostQue[chatId].finalDate=requestedDate.getTime()
-    EditedPosts.awaitedPosts[channelId].push(PostQue[chatId])
-    fs.writeFile('postsDatabase.json', JSON.stringify(EditedPosts), err => {
-        if (err) {
-            console.error(err);
-        } else {
-            postsData=EditedPosts
-        }
-    })
-}
+
 const EditDatabaseDeleteModeratorByID = (chat) => {
     let Moderator = Object.assign({}, ModerQue[ModerQue.findIndex(el => el.adminId === chat)])
     let EditedModerators=data
@@ -294,133 +180,9 @@ const DeleteNewLocalAdmin = (chatId,userId) => {
     })
     newLocalAdminId=null
 }
-const DeleteChannel = (chatId,channelName) => {
-    let EditedModerators=data
-    let EditedPosts=postsData
-    EditedModerators.channels.splice(channelName,1)
-    EditedModerators.adminsLocal.splice(channelName,1)
-    EditedModerators.adminsManagers.splice(channelName,1)
-    EditedModerators.days.splice(channelName,1)
-    EditedPosts.awaitedPosts.splice(channelName,1)
-    EditedPosts.deleteRequests.splice(channelName,1)
-    EditedModerators.commentsChannel.splice(channelName,1)
-    fs.writeFile('database.json', JSON.stringify(EditedModerators), err => {
-        if (err) {
-            console.error(err);
-        } else {
-            data=EditedModerators
-            postsData=EditedPosts
-        }
-    })
-    fs.writeFile('postsDatabase.json', JSON.stringify(EditedPosts), err => {
-        if (err) {
-            console.error(err);
-        } else {
-            postsData=EditedPosts
-        }
-    })
-    bot.sendMessage(chatId, `Данный канал успешно удален`);
-    ChannelsString()
-}
-const DeleteFromAwaitedPosts = (channelId,postId) => {
-    let EditedPosts=postsData
-    EditedPosts.awaitedPosts[channelId].splice(postId,1)
-    fs.writeFile('postsDatabase.json', JSON.stringify(EditedPosts), err => {
-        if (err) {
-            console.error(err);
-        } else {
-            postsData=EditedPosts
-        }
-    })
-}
-let newLocalAdminId
-const CopyPost = (from, destination, postObject) => {
-console.log("start")
-    let inlineKeyboard={
-        inline_keyboard: [
 
-        ]
-    }
-    for(let i=0;i<postObject.buttonName.length;i++) {
-        if (postObject.buttonName[i]) {
-            inlineKeyboard.inline_keyboard.push([{text: postObject.buttonName[i], url: postObject.buttonUrl[i]}])
-        }
-    }
-    if(postObject.type!=="repost") {
-        console.log("if")
-        bot.copyMessage(destination, from, postObject.postId, {reply_markup: inlineKeyboard})
-            .then((copiedMessage) => {
-                let copiedMessageId = copiedMessage.message_id
-                if (postObject.autoDeleteHours) {
-                    let now = new Date();
-                    HangAutoDelete(postObject.autoDeleteHours, copiedMessageId, Channels.indexOf(postObject.channelId), now.getTime())
-                }
-                console.log(postObject)
-                if (postObject.commentsAreClosed) {
-                    CloseComments.push(copiedMessageId)
-                    console.log(CloseComments)
-                }
-            })
-            .catch((error) => {
-                console.error('Error copying message:', error);
-                bot.sendMessage(from, 'Error copying message. Скорее всего вы отправили неправильную ссылку добавляя кнопки.');
-            });
-    }else{
-        bot.forwardMessage(destination, from, postObject.postId, {reply_markup: inlineKeyboard})
-            .then((copiedMessage) => {
-                let copiedMessageId = copiedMessage.message_id
-                if (postObject.autoDeleteHours) {
-                    let now = new Date();
-                    HangAutoDelete(postObject.autoDeleteHours, copiedMessageId, Channels.indexOf(postObject.channelId), now.getTime())
-                }
-                console.log(postObject)
-                if (postObject.commentsAreClosed) {
-                    CloseComments.push(copiedMessageId)
-                    console.log(postObject.forwardFrom)
-                }
-            })
-            .catch((error) => {
-                console.error('Error copying message:', error);
-                bot.sendMessage(from, 'Error copying message. Скорее всего вы отправили неправильную ссылку добавляя кнопки.');
-            });
-    }
-}
-const HangAutoDelete = (time,postId,channelId,wasPostedOn) => {
-    let EditedPosts=postsData
-    let deleteRequest={
-        time:time,
-        postId:postId,
-        channelId:channelId,
-        wasPostedOn:wasPostedOn,
-        mustBeDeletedAt:wasPostedOn+(3600000*time)
-    }
-    console.log(EditedPosts)
-    EditedPosts.deleteRequests[channelId].push(deleteRequest)
-    fs.writeFile('postsDatabase.json', JSON.stringify(EditedPosts), err => {
-        if (err) {
-            console.error(err);
-        } else {
-            postsData=EditedPosts
-        }
-    })
-}
-const DeleteFromAutoDelete = (deleteObject,index) => {
-    let EditedPosts=postsData
-    DeleteMessage(Channels[deleteObject.channelId],deleteObject.postId)
-    EditedPosts.deleteRequests[deleteObject.channelId].splice(index,1)
-    fs.writeFile('postsDatabase.json', JSON.stringify(EditedPosts), err => {
-        if (err) {
-            console.error(err);
-        } else {
-            postsData=EditedPosts
-        }
-    })
-}
-const DeleteMessage = (chatId,postId) =>{
-    bot.deleteMessage(chatId,postId)
-       console.log("delit otrabotal")
 
-}
+
 const CheckIfYouCanPost = (month, day, hours, minutes, chatId, channelIndex) =>{
     let nowS = new Date()
     let requestedDate=new Date(nowS.getFullYear(),month,day,hours,minutes,0)
@@ -707,7 +469,7 @@ bot.on('callback_query', (query) => {
 
                 ]
             };
-            CopyPost(chatId,channelIndex,PostQue[index])
+            CopyPost(bot,chatId,channelIndex,PostQue[index],CloseComments)
             }else{
                 responseText = 'В данный момент вы не можете выложить пост на этом канале, попробуйте другое время либо другой канал';
                 replyMarkup = {
@@ -784,7 +546,6 @@ bot.on('callback_query', (query) => {
     });
 });
 //команды для бота с реплаем
-let newChannelId
 bot.on('message', (msg) => {
 
     if(CloseComments.indexOf(msg.forward_from_message_id)!==-1){//нужно для удаления комментов
@@ -1072,7 +833,7 @@ bot.on('message', (msg) => {
             id=msg.text-1000000000000
 
         }
-        CreateNewChannel(msg.chat.id,newChannelId,id)
+        CreateNewChannel(bot,msg.chat.id,newChannelId,id,AdminsIdGlobal,setNewData,setNewPostsData,ChannelsString)
     }
     if (msg.reply_to_message && msg.reply_to_message.text === "Выберите канал из которого вы хотите удалить МЕНЕДЖЕРА") {
         if(AdminsLocal[msg.text].indexOf(msg.from.id)===-1){
@@ -1105,7 +866,7 @@ bot.on('message', (msg) => {
         DeleteNewLocalAdmin(msg.chat.id,msg.text)
     }
     if (msg.reply_to_message && msg.reply_to_message.text === "Выберите номер канала который вы хотели бы удалить") {
-        DeleteChannel(msg.chat.id,msg.text)
+        DeleteChannel(bot,msg.chat.id,msg.text,setNewData,setNewPostsData,ChannelsString)
     }
 
 });
