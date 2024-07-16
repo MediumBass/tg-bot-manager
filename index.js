@@ -673,6 +673,6 @@ bot.on('message', (msg) => {
     DeleteNewLocalAdmin(msg.chat.id, msg.text, newLocalAdminId, setNewData);
   }
   if (msg.reply_to_message && msg.reply_to_message.text === botCommand[14][users[chatId]]) {
-    DeleteChannel(bot, msg.chat.id, msg.text, setNewData, setNewPostsData, ChannelsString, botFunction[1][users[chatId]]);
+    DeleteChannel(bot, msg.chat.id, msg.text, setNewData, setNewPostsData, ChannelsString, botFunction[2][users[chatId]]);
   }
 });
