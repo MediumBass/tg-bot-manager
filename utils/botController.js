@@ -32,7 +32,7 @@ class TG {
             console.error('Error promoting user:', error)
         });
     }
-    CopyMSG = (bot,destination, from, postObject, inlineKeyboard,CloseComments) =>{
+    CopyMSG = (bot,destination, from, postObject, inlineKeyboard,CloseComments,HangAutoDelete,Channels,text) =>{
         bot.copyMessage(destination, from, postObject.postId, {reply_markup: inlineKeyboard})
             .then((copiedMessage) => {
                 let copiedMessageId = copiedMessage.message_id
@@ -48,10 +48,10 @@ class TG {
             })
             .catch((error) => {
                 console.error('Error copying message:', error);
-                bot.sendMessage(from, 'Error copying message. Скорее всего вы отправили неправильную ссылку добавляя кнопки.');
+                bot.sendMessage(from, text);
             });
     }
-    ForwardMSG = (bot,destination, from, postObject, inlineKeyboard,CloseComments) =>{
+    ForwardMSG = (bot,destination, from, postObject, inlineKeyboard,CloseComments,HangAutoDelete,Channels,text) =>{
         bot.forwardMessage(destination, from, postObject.postId, {reply_markup: inlineKeyboard})
             .then((copiedMessage) => {
                 let copiedMessageId = copiedMessage.message_id
@@ -67,14 +67,13 @@ class TG {
             })
             .catch((error) => {
                 console.error('Error copying message:', error);
-                bot.sendMessage(from, 'Error copying message. Скорее всего вы отправили неправильную ссылку добавляя кнопки.');
+                bot.sendMessage(from, text);
             });
     }
     DeleteMessage = (bot,chatId,postId) =>{
         bot.deleteMessage(chatId,postId)
-        console.log("delit otrabotal")
-
     }
+
 
 }
 module.exports = new TG()

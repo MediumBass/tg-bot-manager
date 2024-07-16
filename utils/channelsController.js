@@ -1,8 +1,8 @@
-const data = require("../database.json");
-const postsData = require("../postsDatabase.json");
+const data = require("../db/database.json");
+const postsData = require("../db/postsDatabase.json");
 const fs = require("fs");
 class ChannelsController {
-     CreateNewChannel = (bot,chatId,channelName,commentsChannel,AdminsIdGlobal,setNewData,setNewPostData,ChannelsString) => {
+     CreateNewChannel = (bot,chatId,channelName,commentsChannel,AdminsIdGlobal,setNewData,setNewPostData,ChannelsString,text) => {
         let EditedModerators=data
         let EditedPosts=postsData
         EditedModerators.channels.push(channelName)
@@ -12,24 +12,24 @@ class ChannelsController {
         EditedPosts.awaitedPosts.push([])
         EditedPosts.deleteRequests.push([])
         EditedModerators.commentsChannel.push(commentsChannel)
-        fs.writeFile('database.json', JSON.stringify(EditedModerators), err => {
+        fs.writeFile('db/database.json', JSON.stringify(EditedModerators), err => {
             if (err) {
                 console.error(err);
             } else {
                 setNewData(EditedModerators)
             }
         })
-        fs.writeFile('postsDatabase.json', JSON.stringify(EditedPosts), err => {
+        fs.writeFile('db/postsDatabase.json', JSON.stringify(EditedPosts), err => {
             if (err) {
                 console.error(err);
             } else {
                 setNewPostData(EditedPosts)
             }
         })
-         bot.sendMessage(chatId, `Новый канал успешно добавлен на сервер`);
+         bot.sendMessage(chatId, text);
             ChannelsString()
     }
-     DeleteChannel = (bot,chatId,channelName,setNewData,setNewPostData,ChannelsString) => {
+     DeleteChannel = (bot,chatId,channelName,setNewData,setNewPostData,ChannelsString,text) => {
         let EditedModerators=data
         let EditedPosts=postsData
         EditedModerators.channels.splice(channelName,1)
@@ -39,7 +39,7 @@ class ChannelsController {
         EditedPosts.awaitedPosts.splice(channelName,1)
         EditedPosts.deleteRequests.splice(channelName,1)
         EditedModerators.commentsChannel.splice(channelName,1)
-        fs.writeFile('database.json', JSON.stringify(EditedModerators), err => {
+        fs.writeFile('db/database.json', JSON.stringify(EditedModerators), err => {
             if (err) {
                 console.error(err);
             } else {
@@ -47,16 +47,23 @@ class ChannelsController {
                 setNewPostData(EditedPosts)
             }
         })
-        fs.writeFile('postsDatabase.json', JSON.stringify(EditedPosts), err => {
+        fs.writeFile('db/postsDatabase.json', JSON.stringify(EditedPosts), err => {
             if (err) {
                 console.error(err);
             } else {
                 setNewPostData(EditedPosts)
             }
         })
-        bot.sendMessage(chatId, `Данный канал успешно удален`);
+        bot.sendMessage(chatId, text);
         ChannelsString()
     }
+    ChangeUserLanguage = (users,buttonData,chatId) =>{
+        users[chatId] = buttonData
+        fs.writeFile('db/users.json', JSON.stringify(users), err => {
+
+        })
+    }
+
 }
 
 module.exports = new ChannelsController()
