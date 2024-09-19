@@ -9,7 +9,7 @@
 <h1>How to start </h1> <br>
 1 Copy repository <br>
 2 Start bot with BotFather <br>
-3 In index.js on 5 position replace token with yours <br>
+3 In .env on 1 position replace token with yours <br>
 4 Send /checkmyid to your bot <br>
 5 In database.json replace adminsAbsolute with your id <br>
 6 Send /help <br>
